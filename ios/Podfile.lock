@@ -1,0 +1,22 @@
+PODS:
+  - analog_clock (0.0.1):
+    - Flutter
+  - Flutter (1.0.0)
+
+DEPENDENCIES:
+  - analog_clock (from `.symlinks/plugins/analog_clock/ios`)
+  - Flutter (from `Flutter`)
+
+EXTERNAL SOURCES:
+  analog_clock:
+    :path: ".symlinks/plugins/analog_clock/ios"
+  Flutter:
+    :path: Flutter
+
+SPEC CHECKSUMS:
+  analog_clock: 3f864a82c3b9ffc5743911e353d11556bdb43f7a
+  Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
+
+PODFILE CHECKSUM: 1b66dae606f75376c5f2135a8290850eeb09ae83
+
+COCOAPODS: 1.6.0
