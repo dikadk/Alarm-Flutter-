@@ -1,10 +1,14 @@
+import 'dart:collection';
+
 import 'package:alarm/alarms.dart';
+import 'package:alarm/clocks_model.dart';
 import 'package:alarm/fab_bottom_app_bar.dart';
-import 'package:alarm/inner_shadow.dart';
 import 'package:analog_clock/analog_clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gradient_widgets/gradient_widgets.dart';
+import 'package:provider/provider.dart';
+import 'package:timezone/standalone.dart';
 
 void main() => runApp(MyApp());
 
@@ -36,6 +40,8 @@ class MyApp extends StatelessWidget {
 }
 
 class HomePage extends StatelessWidget {
+  final int _selectedIndex = 0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,40 +66,51 @@ class HomePage extends StatelessWidget {
         elevation: 2.0,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: FABBottomAppBar(
-        selectedColor: goldColor,
-        color: Colors.white,
-        iconSize: 32,
-        notchedShape: CircularNotchedRectangle(),
-        notchedMargin: 8,
-        backgroundColor: purpleColor,
-        onTabSelected: (index) {
-          var routeName;
-          switch (index) {
-            case 0:
-              routeName = "/";
-              break;
-            case 1:
-              routeName = "/alarms";
-              break;
-            case 2:
-              routeName = "/bed";
-              break;
-            case 2:
-              routeName = "/timer";
-              break;
-            default:
-          }
-          Navigator.pushNamed(context, routeName);
-        },
-        items: [
-          FABBottomAppBarItem(iconData: Icons.watch_later),
-          FABBottomAppBarItem(iconData: Icons.alarm),
-          FABBottomAppBarItem(iconData: Icons.brightness_4),
-          FABBottomAppBarItem(iconData: Icons.timer),
-        ],
-      ),
+      bottomNavigationBar: BottomAppBar(),
       body: WorldClock(),
+    );
+  }
+}
+
+class BottomAppBar extends StatelessWidget {
+  const BottomAppBar({
+    Key key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return FABBottomAppBar(
+      selectedColor: goldColor,
+      color: Colors.white,
+      iconSize: 32,
+      notchedShape: CircularNotchedRectangle(),
+      notchedMargin: 8,
+      backgroundColor: purpleColor,
+      onTabSelected: (index) {
+        var routeName;
+        switch (index) {
+          case 0:
+            routeName = "/";
+            break;
+          case 1:
+            routeName = "/alarms";
+            break;
+          case 2:
+            routeName = "/bed";
+            break;
+          case 2:
+            routeName = "/timer";
+            break;
+          default:
+        }
+        Navigator.pushNamed(context, routeName);
+      },
+      items: [
+        FABBottomAppBarItem(iconData: Icons.watch_later),
+        FABBottomAppBarItem(iconData: Icons.alarm),
+        FABBottomAppBarItem(iconData: Icons.brightness_4),
+        FABBottomAppBarItem(iconData: Icons.timer),
+      ],
     );
   }
 }
@@ -101,53 +118,59 @@ class HomePage extends StatelessWidget {
 class WorldClock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      body: Center(
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: EdgeInsets.all(44),
-              child: Text(
-                "04:45 AM",
-                style: TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    color: purpleColor),
+    return ChangeNotifierProvider<ClocksModel>(
+      create: (_) => ClocksModel(),
+      child: Scaffold(
+        backgroundColor: backgroundColor,
+        body: Center(
+          child: Column(
+            children: <Widget>[
+              Padding(
+                padding: EdgeInsets.all(44),
+                child: Text(
+                  "04:45 AM",
+                  style: TextStyle(
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold,
+                      color: purpleColor),
+                ),
               ),
-            ),
-            Center(child: ClockWidger()),
-            Expanded(
-              child: ClocksList(),
-            ),
-          ],
+              Center(
+                child: Consumer<ClocksModel>(
+                  builder: (context, clocks, child) {
+                    return ClockWidget(clocks.items[clocks.selectedItem]);
+                  },
+                ),
+              ),
+              Expanded(
+                child: Consumer<ClocksModel>(
+                  builder: (context, clocks, child) {
+                    return ClocksList(clocks.items, clocks.selectedItem);
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class ClocksList extends StatefulWidget {
-  int _selectedIndex = 0;
-  List<String> cities = ["NEW YORK", "LONDON", "LOS ANGELES", "PARIS"];
+class ClocksList extends StatelessWidget {
+  final UnmodifiableListView<CityTimeItem> _items;
+  final int _selectedItem;
 
-  @override
-  ClocksListState createState() {
-    return ClocksListState();
-  }
-}
+  ClocksList(this._items, this._selectedItem);
 
-class ClocksListState extends State<ClocksList> {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: widget.cities.length,
+        itemCount: _items.length,
         itemBuilder: (context, index) {
           return ClockListTile(
-              text: widget.cities[index],
-              index: index,
-              selected: widget._selectedIndex);
+              text: _items[index].name, index: index, selected: _selectedItem);
         });
   }
 }
@@ -180,7 +203,9 @@ class ClockListTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(15.0),
             side: BorderSide(width: 2, color: Colors.white)),
         child: Text(text),
-        callback: () {},
+        callback: () {
+          Provider.of<ClocksModel>(context, listen: false).setSelection(index);
+        },
         gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -191,14 +216,18 @@ class ClockListTile extends StatelessWidget {
   }
 }
 
-class ClockWidger extends StatefulWidget {
+class ClockWidget extends StatefulWidget {
+  final CityTimeItem _item;
+
+  ClockWidget(this._item);
+
   @override
   ClockState createState() {
     return ClockState();
   }
 }
 
-class ClockState extends State<ClockWidger> {
+class ClockState extends State<ClockWidget> {
   @override
   Widget build(BuildContext context) {
     return Stack(alignment: AlignmentDirectional.center, children: [
@@ -245,8 +274,14 @@ class ClockState extends State<ClockWidger> {
         textScaleFactor: 1.4,
         showTicks: true,
         showDigitalClock: false,
-        datetime: DateTime.now(),
+        datetime: provideZonedDateTime(widget._item.name),
       ),
     ]);
+  }
+
+  //Add async stuff
+  DateTime provideZonedDateTime(String locationName) {
+    final localTime = DateTime.now();
+    return TZDateTime.from(localTime, getLocation(locationName));
   }
 }
