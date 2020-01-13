@@ -3,8 +3,6 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:alarm/time_helper.dart';
 
-var timeHelperService = TimeHelperService();
-
 class CityTimeItem {
   final String name;
 
@@ -12,10 +10,13 @@ class CityTimeItem {
 }
 
 class ClocksModel extends ChangeNotifier {
+  var timeHelperService = TimeHelperService();
+
   final List<CityTimeItem> _items = [
-    CityTimeItem("NEW YORK"),
-    CityTimeItem("LONDON"),
-    CityTimeItem("LOS ANGELES"),
+    CityTimeItem("America/New_York"),
+    CityTimeItem("London"),
+    CityTimeItem("Europe/Moscow"),
+    CityTimeItem("LOS_ANGELES"),
     CityTimeItem("PARIS")
   ];
 

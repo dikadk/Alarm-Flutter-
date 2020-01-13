@@ -216,18 +216,11 @@ class ClockListTile extends StatelessWidget {
   }
 }
 
-class ClockWidget extends StatefulWidget {
+class ClockWidget extends StatelessWidget {
   final CityTimeItem _item;
 
   ClockWidget(this._item);
 
-  @override
-  ClockState createState() {
-    return ClockState();
-  }
-}
-
-class ClockState extends State<ClockWidget> {
   @override
   Widget build(BuildContext context) {
     return Stack(alignment: AlignmentDirectional.center, children: [
@@ -263,25 +256,34 @@ class ClockState extends State<ClockWidget> {
                   spreadRadius: 0.1)
             ]),
       ),
-      AnalogClock(
-        height: 320,
-        isLive: true,
-        hourHandColor: goldColor,
-        minuteHandColor: purpleColor,
-        secondHandColor: Colors.redAccent,
-        showSecondHand: true,
-        showNumbers: false,
-        textScaleFactor: 1.4,
-        showTicks: true,
-        showDigitalClock: false,
-        datetime: provideZonedDateTime(widget._item.name),
-      ),
+      FutureBuilder<DateTime>(
+          future: provideZonedDateTime(_item.name),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Text("Error");
+            } else if (snapshot.hasData && snapshot.data != null)
+              return AnalogClock(
+                  height: 320,
+                  isLive: false,
+                  hourHandColor: goldColor,
+                  minuteHandColor: purpleColor,
+                  secondHandColor: Colors.redAccent,
+                  showSecondHand: true,
+                  showNumbers: false,
+                  textScaleFactor: 1.4,
+                  showTicks: true,
+                  showDigitalClock: false,
+                  datetime: DateTime.parse(snapshot.data.toString()));
+          }),
     ]);
   }
+}
 
-  //Add async stuff
-  DateTime provideZonedDateTime(String locationName) {
-    final localTime = DateTime.now();
-    return TZDateTime.from(localTime, getLocation(locationName));
-  }
+//Add async stuff
+Future<DateTime> provideZonedDateTime(String locationName) async {
+  final localTime = DateTime.now();
+  var dateTime = TZDateTime.from(localTime, getLocation(locationName));
+  print(dateTime.timeZoneName);
+  print(dateTime.toString());
+  return dateTime;
 }
